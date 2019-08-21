@@ -1,0 +1,22 @@
+#!/home/utils/bash-4.3/bin/bash
+
+p4OpenedCommand="p4 opened "
+
+for ((i = 1; i <= $#; i++)); do
+    p4OpenedCommand+="${!i} "
+done
+echo $p4OpenedCommand
+mapfile -t openFiles < <( $p4OpenedCommand 2>&1 | grep -oP '.+(?=#)' | xargs -r p4 where | awk '{print $3}' )
+
+runCommand="vim -p "
+for ((i = 0; i < ${#openFiles[@]}; i++)); do
+    runCommand+="${openFiles[$i]} "
+done
+
+if ((${#openFiles} != 0)); then
+    echo $runCommand
+    eval $runCommand
+else
+    echo "No file to edit..."
+fi
+

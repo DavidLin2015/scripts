@@ -1,0 +1,39 @@
+#!/home/utils/bash-4.3/bin/bash
+
+openFiles=()
+p4Files=()
+tempFiles=()
+p4OpenedCommand="p4 opened "
+
+for ((i = 1; i <= $#; i++)); do
+    p4OpenedCommand+="${!i} "
+done
+
+mapfile -t openFiles < <( $p4OpenedCommand 2>&1 | grep -oP '.+(?=#)' | xargs -r p4 where | awk '{print $3}' )
+mapfile -t p4Files < <( $p4OpenedCommand 2>&1 | grep -oP '.+#[0-9]+' )
+
+for p4File in ${p4Files[@]}; do
+    baseName=$(basename ${p4File%#*}) # trim revision
+    extention="${baseName#*.}"
+    tmpFile=$(mktemp).${extention}
+    tempFiles+=($tmpFile)
+    p4 print -q -o $tmpFile $p4File
+done
+
+runCommand="vim -c :DiffBufPair "
+for ((i = 0; i < ${#openFiles[@]}; i++)); do
+    runCommand+="${openFiles[$i]} "
+    runCommand+="${tempFiles[$i]} "
+done
+
+if ((${#openFiles} != 0)); then
+    echo $runCommand
+    eval $runCommand
+else
+    echo "No file to diff..."
+fi
+
+
+for tempFile in ${tempFiles[@]}; do
+    rm -f $tempFile
+done
