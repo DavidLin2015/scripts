@@ -1,0 +1,2 @@
+tee /dev/tty | awk '/files shelved./{print}' | awk '{print $2}' | xclip
+echo "\"`xclip -o`\" saved to clipboard."
